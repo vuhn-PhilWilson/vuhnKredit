@@ -6,7 +6,7 @@ let package = Package(
     name: "vuhnKredit",
     dependencies: [
         //.package(path: "../vuhnNetwork")
-        .package(url: "https://github.com/vuhn-PhilWilson/vuhnNetwork", from: "0.0.4")
+        .package(url: "https://github.com/vuhn-PhilWilson/vuhnNetwork", from: "0.0.1")
     ],
     targets: [
         .target(
