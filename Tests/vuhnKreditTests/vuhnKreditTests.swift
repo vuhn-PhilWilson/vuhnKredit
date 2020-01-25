@@ -16,7 +16,7 @@ final class vuhnKreditTests: XCTestCase {
 
         let process = Process()
         process.executableURL = fooBinary
-        process.arguments = ["Mr Nakamoto"]
+        process.arguments = ["-help"]
 
         let pipe = Pipe()
         process.standardOutput = pipe
@@ -26,9 +26,8 @@ final class vuhnKreditTests: XCTestCase {
 
         let data = pipe.fileHandleForReading.readDataToEndOfFile()
         let output = String(data: data, encoding: .utf8)
-
-        XCTAssertEqual(output, "Hello, Mr Nakamoto!\n")
-//        XCTAssertEqual(output, "Swift Echo Server Sample\n")
+        
+        XCTAssert(output!.contains("USAGE:"))
     }
 
     /// Returns path to the built products directory.
