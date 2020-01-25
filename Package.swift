@@ -11,12 +11,19 @@ let package = Package(
     targets: [
         .target(
             name: "vuhnKredit",
-            dependencies: ["vuhnNetwork","CommandLineTool"]),
+            dependencies: ["vuhnNetwork","CommandLineTool","ConfigurationTool"]),
+        .target(
+            name: "ConsoleOutputTool",
+            dependencies: []),
         .target(
             name: "CommandLineTool",
-            dependencies: ["vuhnNetwork"]),
+            dependencies: ["vuhnNetwork", "ConfigurationTool", "ConsoleOutputTool"]),
+        .target(
+            name: "ConfigurationTool",
+            dependencies: ["ConsoleOutputTool"]),
         .testTarget(
             name: "vuhnKreditTests",
             dependencies: ["vuhnKredit"]),
     ]
 )
+

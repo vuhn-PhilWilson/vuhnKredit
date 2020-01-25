@@ -1,10 +1,15 @@
 
 import CommandLineTool
+import ConfigurationTool
+import ConsoleOutputTool
 
-let tool = CommandLineTool()
+let configurationTool = ConfigurationTool()
+let consoleOutputTool = ConsoleOutputTool()
+
+let commandLineTool = CommandLineTool(configurationTool: configurationTool, consoleOutputTool: consoleOutputTool)
 
 do {
-    try tool.run()
+    try commandLineTool.run()
 } catch {
     print("Whoops! An error occurred: \(error)")
 }
