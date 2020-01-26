@@ -82,7 +82,8 @@ public final class ConsoleOutputTool {
     }
     
     public init() {
-        
+        resetTerminal()
+        clearDisplay()
     }
     
     public func resetTerminal() {

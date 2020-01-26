@@ -12,16 +12,16 @@ public class ConfigurationModel {
     var consoleOutputTool: ConsoleOutputTool
     
     public enum OptionType: String {
-        case connectTo = "-connectTo"
-        case dataDirectory = "-dataDirectory"
-        case help = "-help"
+        case connectTo = "connectTo"
+        case dataDirectory = "dataDirectory"
+        case help = "help"
         case unknown
         
         init(value: String) {
             switch value {
-            case "-connectTo": self = .connectTo
-            case "-dataDirectory": self = .dataDirectory
-            case "-help": self = .help
+            case "connectTo": self = .connectTo
+            case "dataDirectory": self = .dataDirectory
+            case "help": self = .help
             default: self = .unknown
             }
         }

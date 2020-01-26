@@ -27,9 +27,6 @@ public final class CommandLineTool
 
     public func run() throws
     {
-        consoleOutputTool.resetTerminal()
-        consoleOutputTool.clearDisplay()
-        
         if CommandLine.arguments.contains("-help") {
             configurationTool.configurationModel.printUsage()
             return
@@ -57,8 +54,18 @@ public final class CommandLineTool
                     let addresses = data.split(separator: ",")
                     print("            addresses: ")
                     for address in addresses {
-                        print("                \(address)")
-                        configurationTool.configurationModel.addressesArray.append(String(address))
+                        print("                \(address)", terminator: "")
+                        // Onlt add this address if it doesn't already exist
+                        var needsAppending = true
+                        for currentAddress in configurationTool.configurationModel.addressesArray {
+                            if currentAddress == address {
+                                print(" ( inside configuration file )", terminator: "")
+                                needsAppending = false; break }
+                        }
+                        print("")
+                        if needsAppending == true {
+                            configurationTool.configurationModel.addressesArray.append(String(address))
+                        }
                     }
                     print("")
                 }
