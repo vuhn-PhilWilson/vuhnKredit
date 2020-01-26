@@ -13,14 +13,14 @@ import ConfigurationTool
 
 public final class CommandLineTool
 {
-    private var consoleOutputTool: ConsoleOutputTool
+    private var consoleOutputTool: ConsoleOutputTool?
     private var configurationTool: ConfigurationTool
 
     private let arguments: [String]
 
-    public init(configurationTool: ConfigurationTool, consoleOutputTool: ConsoleOutputTool, arguments: [String] = CommandLine.arguments)
+    public init(configurationTool: ConfigurationTool, arguments: [String] = CommandLine.arguments)
     {
-        self.consoleOutputTool = consoleOutputTool
+        self.consoleOutputTool = configurationTool.configurationModel.consoleOutputTool
         self.configurationTool = configurationTool
         self.arguments = arguments
     }
@@ -33,15 +33,15 @@ public final class CommandLineTool
         }
         
         // Test display of simple node data
-        consoleOutputTool.displayNode(nodeIndex: 0, address: "0-127.0.0.1:8333", sentMessage: "Ping", receivedMessage: "Awaiting Pong", status: 2)
+        consoleOutputTool?.displayNode(nodeIndex: 0, address: "0-127.0.0.1:8333", sentMessage: "Ping", receivedMessage: "Awaiting Pong", status: 2)
         
-        consoleOutputTool.displayNode(nodeIndex: 1, address: "1-[ed12:ed12:ed12:ed12:ed12:ed12]:8333", sentMessage: "Pong", receivedMessage: "Inventory", status: 0)
+        consoleOutputTool?.displayNode(nodeIndex: 1, address: "1-[ed12:ed12:ed12:ed12:ed12:ed12]:8333", sentMessage: "Pong", receivedMessage: "Inventory", status: 0)
         
-        consoleOutputTool.displayNode(nodeIndex: 2, address: "2-[ed12:ed12:ed12:ed12:ed12:ed12]:8333", sentMessage: "Version", receivedMessage: "Awaiting VerAck", status: 1)
+        consoleOutputTool?.displayNode(nodeIndex: 2, address: "2-[ed12:ed12:ed12:ed12:ed12:ed12]:8333", sentMessage: "Version", receivedMessage: "Awaiting VerAck", status: 1)
         
-        consoleOutputTool.displayNode(nodeIndex: 3, address: "3-127.0.0.1:8333", sentMessage: "Pong", receivedMessage: "Inventory", status: 0)
+        consoleOutputTool?.displayNode(nodeIndex: 3, address: "3-127.0.0.1:8333", sentMessage: "Pong", receivedMessage: "Inventory", status: 0)
         
-        consoleOutputTool.displayNode(nodeIndex: 4, address: "4-[ed12:ed12:ed12:ed12:ed12:ed12]:8333", sentMessage: "Pong", receivedMessage: "Inventory", status: 2)
+        consoleOutputTool?.displayNode(nodeIndex: 4, address: "4-[ed12:ed12:ed12:ed12:ed12:ed12]:8333", sentMessage: "Pong", receivedMessage: "Inventory", status: 2)
 
         print("    Commandline parameters found:")
         if CommandLine.arguments.contains("-connectTo") {

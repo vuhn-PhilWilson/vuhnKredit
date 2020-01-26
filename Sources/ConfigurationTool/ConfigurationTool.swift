@@ -12,7 +12,9 @@ public final class ConfigurationTool
 {
     public let configurationModel = ConfigurationModel()
     
-    public init() {
+    public init() { }
+    
+    public func initialiseConfigurationFile() {
         let fileService = FileService()
         fileService.generateDefaultConfigurationFile()
         if let configurationDictionary = fileService.readConfigurationFile() {

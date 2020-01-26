@@ -26,7 +26,7 @@ let package = Package(
             dependencies: ["ConsoleOutputTool", "FileService"]),
         .testTarget(
             name: "vuhnKreditTests",
-            dependencies: ["vuhnKredit"]),
+            dependencies: ["vuhnKredit", "ConfigurationTool"]),
     ]
 )
 

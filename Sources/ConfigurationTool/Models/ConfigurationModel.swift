@@ -9,7 +9,7 @@ import Foundation
 import ConsoleOutputTool
 
 public class ConfigurationModel {
-    var consoleOutputTool: ConsoleOutputTool
+    public var consoleOutputTool: ConsoleOutputTool?
     
     public enum OptionType: String {
         case connectTo = "connectTo"
@@ -30,8 +30,9 @@ public class ConfigurationModel {
     public var configurationDictionary = [OptionType: String]()
     public var addressesArray = [String]()
     
-    public init()
-    {
+    public init() { }
+    
+    public func initialiseConsoleOutput() {
         self.consoleOutputTool = ConsoleOutputTool()
     }
 
@@ -42,19 +43,19 @@ public class ConfigurationModel {
     public func printUsage() {
         let executableName = (CommandLine.arguments[0] as NSString).lastPathComponent
         
-        consoleOutputTool.writeMessage("")
-        consoleOutputTool.writeMessage("USAGE:")
-        consoleOutputTool.writeMessage("user$ \(executableName) -command parameters")
-        consoleOutputTool.writeMessage("")
-        consoleOutputTool.writeMessage("COMMANDS:")
-        consoleOutputTool.writeMessage("    -connectTo <IPV4 Address>,<IPV6 Address>,...")
-        consoleOutputTool.writeMessage("    -dataDirectory <URL-to-directory-to-store-data>")
-        consoleOutputTool.writeMessage("    -help to show usage information")
-        consoleOutputTool.writeMessage("")
-        consoleOutputTool.writeMessage("EXAMPLES:")
-        consoleOutputTool.writeMessage("user$ \(executableName) -connectTo 127.0.0.1,192.168.0.10:8333.[::1]:8888")
-        consoleOutputTool.writeMessage("user$ \(executableName) -dataDirectory \"/Users/<user>/Documents/Bitcoin/data/\"")
-        consoleOutputTool.writeMessage("user$ \(executableName) -connectTo 127.0.0.1,192.168.0.10:8333.[::1]:8888 -dataDirectory \"/Users/<user>/Documents/Bitcoin/data/\"")
-        consoleOutputTool.writeMessage("")
+        consoleOutputTool?.writeMessage("")
+        consoleOutputTool?.writeMessage("USAGE:")
+        consoleOutputTool?.writeMessage("user$ \(executableName) -command parameters")
+        consoleOutputTool?.writeMessage("")
+        consoleOutputTool?.writeMessage("COMMANDS:")
+        consoleOutputTool?.writeMessage("    -connectTo <IPV4 Address>,<IPV6 Address>,...")
+        consoleOutputTool?.writeMessage("    -dataDirectory <URL-to-directory-to-store-data>")
+        consoleOutputTool?.writeMessage("    -help to show usage information")
+        consoleOutputTool?.writeMessage("")
+        consoleOutputTool?.writeMessage("EXAMPLES:")
+        consoleOutputTool?.writeMessage("user$ \(executableName) -connectTo 127.0.0.1,192.168.0.10:8333.[::1]:8888")
+        consoleOutputTool?.writeMessage("user$ \(executableName) -dataDirectory \"/Users/<user>/Documents/Bitcoin/data/\"")
+        consoleOutputTool?.writeMessage("user$ \(executableName) -connectTo 127.0.0.1,192.168.0.10:8333.[::1]:8888 -dataDirectory \"/Users/<user>/Documents/Bitcoin/data/\"")
+        consoleOutputTool?.writeMessage("")
     }
 }
