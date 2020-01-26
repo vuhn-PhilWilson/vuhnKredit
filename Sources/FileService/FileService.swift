@@ -131,8 +131,19 @@ public class FileService {
     }
     
     private func dataDirectoryPath() -> URL {
+
+        #if os(macOS)
         let libraryDirectory = fileManager.urls(for: .libraryDirectory, in: .userDomainMask)[0]
         let appName = String(CommandLine.arguments[0]).split(separator: "/").last!
-        return libraryDirectory.appendingPathComponent("Application Support/\(appName)")
+        let dataDirectory = libraryDirectory.appendingPathComponent("Application Support/\(appName)")
+        print("macOS: dataDirectory = \(dataDirectory)")
+        return dataDirectory
+        #else
+        let homeDirectory = fileManager.homeDirectoryForCurrentUser
+        let appName = String(CommandLine.arguments[0]).split(separator: "/").last!
+        let dataDirectory = homeDirectory.appendingPathComponent(".\(appName)")
+        print("linux: dataDirectory = \(dataDirectory)")
+        return dataDirectory
+        #endif
     }
 }
