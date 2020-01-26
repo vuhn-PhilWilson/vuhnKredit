@@ -1,5 +1,5 @@
 //
-//  ConsoleOutput.swift
+//  ConsoleOutputTool.swift
 //  
 //
 //  Created by Phil Wilson on 24/1/20.
@@ -10,12 +10,12 @@ import Foundation
 // Example characters
 // ┘┐┌└┼⎺⎻─⎼⎽├┤┴┬│▒
 
-enum OutputType {
+public enum OutputType {
     case info
     case error
 }
 
-class ConsoleOutput {
+public final class ConsoleOutputTool {
 
     enum TerminalCharacterAttribute {
         case reset      // 0    Reset all attributes
@@ -81,18 +81,23 @@ class ConsoleOutput {
         }
     }
     
-    func resetTerminal() {
+    public init() {
+        resetTerminal()
+        clearDisplay()
+    }
+    
+    public func resetTerminal() {
         // Reset all terminal settings to default.
         print("\u{1B}c")
     }
     
-    func clearDisplay() {
+    public func clearDisplay() {
         // Clear screen with the following attributes
         print("\u{1B}[\(TerminalCharacterAttribute.green.foreground);\(TerminalCharacterAttribute.black.background)m")
         print("\u{1B}[2J")
     }
     
-    func displayNode(nodeIndex: UInt8, address: String, sentMessage: String, receivedMessage: String, status: UInt8) {
+    public func displayNode(nodeIndex: UInt8, address: String, sentMessage: String, receivedMessage: String, status: UInt8) {
         var foregroundColour = TerminalCharacterAttribute.green.foreground
         var backgroundColour = TerminalCharacterAttribute.black.background
          var specialAttributesStart = ""
@@ -157,7 +162,7 @@ class ConsoleOutput {
         print("\u{1B}[\(TerminalCharacterAttribute.green.foreground);\(TerminalCharacterAttribute.black.background)m")
     }
     
-    func writeMessage(_ message: String, to: OutputType = .info) {
+    public func writeMessage(_ message: String, to: OutputType = .info) {
         switch to {
         case .info:
             print("\(message)")

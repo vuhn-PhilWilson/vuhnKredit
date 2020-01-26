@@ -1,10 +1,16 @@
 
 import CommandLineTool
+import ConfigurationTool
+import ConsoleOutputTool
 
-let tool = CommandLineTool()
+let configurationTool = ConfigurationTool()
+configurationTool.configurationModel.initialiseConsoleOutput()
+configurationTool.initialiseConfigurationFile()
+
+let commandLineTool = CommandLineTool(configurationTool: configurationTool)
 
 do {
-    try tool.run()
+    try commandLineTool.run()
 } catch {
     print("Whoops! An error occurred: \(error)")
 }
