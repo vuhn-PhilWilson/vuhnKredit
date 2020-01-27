@@ -50,12 +50,12 @@ public class FileService {
         
         let filePath = dataDirectoryPath().appendingPathComponent("\(defaultFileName)")
         if !fileManager.fileExists(atPath: filePath.path) {
-            print("\(defaultFileName) doesn't exist. Creating file ...")
+//            print("\(defaultFileName) doesn't exist. Creating file ...")
             fileManager.createFile(atPath: filePath.path, contents: defaultData, attributes: nil)
         } else {
-            print("\(defaultFileName) already exists.")
+//            print("\(defaultFileName) already exists.")
             if forced == true {
-                print("Overwriting \(defaultFileName)")
+//                print("Overwriting \(defaultFileName)")
                 fileManager.createFile(atPath: filePath.path, contents: defaultData, attributes: nil)
             }
         }
@@ -136,13 +136,13 @@ public class FileService {
         let libraryDirectory = fileManager.urls(for: .libraryDirectory, in: .userDomainMask)[0]
         let appName = String(CommandLine.arguments[0]).split(separator: "/").last!
         let dataDirectory = libraryDirectory.appendingPathComponent("Application Support/\(appName)")
-        print("macOS: dataDirectory = \(dataDirectory)")
+//        print("macOS: dataDirectory = \(dataDirectory)")
         return dataDirectory
         #else
         let homeDirectory = fileManager.homeDirectoryForCurrentUser
         let appName = String(CommandLine.arguments[0]).split(separator: "/").last!
         let dataDirectory = homeDirectory.appendingPathComponent(".\(appName)")
-        print("linux: dataDirectory = \(dataDirectory)")
+//        print("linux: dataDirectory = \(dataDirectory)")
         return dataDirectory
         #endif
     }
