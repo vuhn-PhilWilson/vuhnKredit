@@ -84,6 +84,20 @@ public final class CommandLineTool
                 }
             }
         }
+        configurationTool.configurationModel.configurationDictionary[.listeningPort] = "8333"
+        if CommandLine.arguments.contains("-\(ConfigurationModel.OptionType.listeningPort.rawValue)") {
+            print("        -listeningPort")
+            for index in 0..<arguments.count {
+                let command = arguments[index]
+                if command == "-\(ConfigurationModel.OptionType.listeningPort.rawValue)" {
+                    let listeningPort = arguments[index+1]
+                    print("            listeningPort: ")
+                    print("                \(listeningPort)")
+                    print("")
+                    configurationTool.configurationModel.configurationDictionary[.listeningPort] = listeningPort
+                }
+            }
+        }
 
         print("\n")
         
@@ -99,8 +113,18 @@ public final class CommandLineTool
         }
         print("")
 
-        if arguments[1] == "echo server" {
-            runEchoServer()
+        if !configurationTool.configurationModel.addressesArray.isEmpty,
+            let listeningPortString = configurationTool.configurationModel.configurationDictionary[.listeningPort],
+            let listenPortInt = Int(listeningPortString) {
+            makeOutBoundConnections(to: configurationTool.configurationModel.addressesArray, listenPort: listenPortInt) { (dictionary, error) in
+                if let error = error {
+                    print("updateHandler: error \(error)")
+                }
+                else {
+                    print("updateHandler:  dictionary \(dictionary)")
+                }
+            
+            }
         }
     }
 }
