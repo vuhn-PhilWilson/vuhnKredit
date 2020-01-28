@@ -11,8 +11,7 @@ import ConsoleOutputTool
 import ConfigurationTool
 
 
-public final class CommandLineTool
-{
+public final class CommandLineTool {
     private var consoleOutputTool: ConsoleOutputTool?
     private var configurationTool: ConfigurationTool
     
@@ -20,15 +19,13 @@ public final class CommandLineTool
 
     private let arguments: [String]
 
-    public init(configurationTool: ConfigurationTool, arguments: [String] = CommandLine.arguments)
-    {
+    public init(configurationTool: ConfigurationTool, arguments: [String] = CommandLine.arguments) {
         self.consoleOutputTool = configurationTool.configurationModel.consoleOutputTool
         self.configurationTool = configurationTool
         self.arguments = arguments
     }
 
-    public func run() throws
-    {
+    public func run() throws {
         if CommandLine.arguments.contains("-help") {
             configurationTool.configurationModel.printUsage()
             return
@@ -101,13 +98,11 @@ public final class CommandLineTool
                             self.consoleOutputTool?.clearDisplay()
                             self.consoleOutputTool?.displayInformation(networkUpdate: nodeUpdate, error: nil, status: .information)
                             self.redrawConnectedNodes()
-                        }
-                        else if nodeUpdate.type == .shutDown {
+                        } else if nodeUpdate.type == .shutDown {
                             self.consoleOutputTool?.clearDisplay()
                             self.consoleOutputTool?.displayInformation(networkUpdate: nodeUpdate, error: nil, status: .information)
                         }
                     }
-
                 } else {
                     // Use sorted dictionary keys
                     for key in dictionary.keys.sorted() {

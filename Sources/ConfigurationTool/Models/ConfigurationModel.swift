@@ -12,11 +12,11 @@ public class ConfigurationModel {
     public var consoleOutputTool: ConsoleOutputTool?
     
     public enum OptionType: String {
-        case connectTo = "connectTo"
-        case dataDirectory = "dataDirectory"
-        case listeningPort = "listeningPort"
-        case listeningPorts = "listeningPorts"
-        case help = "help"
+        case connectTo
+        case dataDirectory
+        case listeningPort
+        case listeningPorts
+        case help
         case unknown
         
         init(value: String) {

@@ -15,12 +15,9 @@ public class FileService {
     public init() { }
     
     public func generateDefaultConfigurationFile(forced: Bool = false) {
-        do
-        {
+        do {
             try fileManager.createDirectory(at: dataDirectoryPath(), withIntermediateDirectories: true, attributes: nil)
-        }
-        catch let error as NSError
-        {
+        } catch let error as NSError {
             print("Unable to create directory \(error.debugDescription)")
             return
         }
