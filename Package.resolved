@@ -9,6 +9,15 @@
           "revision": "c46a3d41f5b2401d18bcb46d0101cdc5cd13e307",
           "version": "1.0.52"
         }
+      },
+      {
+        "package": "vuhnNetwork",
+        "repositoryURL": "https://github.com/vuhn-PhilWilson/vuhnNetwork",
+        "state": {
+          "branch": null,
+          "revision": "0caef09af748f6cc3a6dd93c8914a82d501f9bb9",
+          "version": "0.0.2"
+        }
       }
     ]
   },
