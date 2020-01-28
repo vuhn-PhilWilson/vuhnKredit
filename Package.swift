@@ -17,7 +17,7 @@ let package = Package(
             dependencies: []),
         .target(
             name: "ConsoleOutputTool",
-            dependencies: []),
+            dependencies: ["vuhnNetwork"]),
         .target(
             name: "CommandLineTool",
             dependencies: ["vuhnNetwork", "ConfigurationTool", "ConsoleOutputTool"]),
