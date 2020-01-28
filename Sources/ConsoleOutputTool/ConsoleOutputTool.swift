@@ -110,42 +110,14 @@ public final class ConsoleOutputTool {
     }
         
     public func displayInformation(networkUpdate: NetworkUpdate, error: Error?, status: Status) {
-        /*
-        var foregroundColour = TerminalCharacterAttribute.green.foreground
-        var backgroundColour = TerminalCharacterAttribute.black.background
-         var specialAttributesStart = ""
-         var specialAttributesEnd = ""
-         if status == 0 {
-             foregroundColour = TerminalCharacterAttribute.white.foreground
-             backgroundColour = TerminalCharacterAttribute.green.background
-             specialAttributesStart = ""
-             specialAttributesEnd = ""
-         } else if status == 1 {
-             foregroundColour = TerminalCharacterAttribute.black.foreground
-             backgroundColour = TerminalCharacterAttribute.yellow.background
-             specialAttributesStart = "\u{1B}[\(foregroundColour);\(backgroundColour);1;5;2m"
-             specialAttributesEnd = "\u{1B}[0;\(foregroundColour);\(backgroundColour)m"
-         } else if status == 2 {
-            foregroundColour = TerminalCharacterAttribute.yellow.foreground
-            backgroundColour = TerminalCharacterAttribute.red.background
-            specialAttributesStart = "\u{1B}[\(foregroundColour);\(backgroundColour);1;5;2m"
-            specialAttributesEnd = "\u{1B}[0;\(foregroundColour);\(backgroundColour)m"
-        }
+
+        let (foregroundColour, backgroundColour, specialAttributesStart, specialAttributesEnd) = attributesForStatus(status)
         
-        let heightOfInformationSection: UInt = 10
-        
-        let height: Float32 = 5
+        let height: Float32 = 10
         let width: Float32 = 63
         
-        let q = (Float32(nodeIndex) / 2).rounded(.towardZero)
-        let r = Float32(nodeIndex).truncatingRemainder(dividingBy: 2)
-        let xOffset = UInt8(floor(r * width))
-        let yOffset = UInt(floor(q * height))
-        
-        var column = xOffset
-        var line = yOffset
-        
-        line += heightOfInformationSection
+        var column = 0
+        var line = 0
     
         // Draw table
         
@@ -153,34 +125,32 @@ public final class ConsoleOutputTool {
         line += 1
         print("\u{1B}[\(line);\(column)H ┌──────────────────┬───────────────────────────────────────┐ ")
         line += 1
-        print("\u{1B}[\(line);\(column)H │          \u{1B}[1mAddress\u{1B}[0;\(foregroundColour);\(backgroundColour)m │                                       │ ")
+        print("\u{1B}[\(line);\(column)H │      \u{1B}[1mInformation\u{1B}[0;\(foregroundColour);\(backgroundColour)m │                                       │ ")
         line += 1
-        print("\u{1B}[\(line);\(column)H │     Sent Message │                                       │ ")
+        print("\u{1B}[\(line);\(column)H │                  │                                       │ ")
         line += 1
-        print("\u{1B}[\(line);\(column)H │ Received Message │                                       │ ")
+        print("\u{1B}[\(line);\(column)H │                  │                                       │ ")
         line += 1
         print("\u{1B}[\(line);\(column)H └──────────────────┴───────────────────────────────────────┘ ")
         line += 1
         
         // Insert data
-        column = xOffset + 23 - UInt8(r)
-        line = yOffset + 2
-        line += heightOfInformationSection
-        print("\u{1B}[\(line);\(column)H\(address)", terminator: "")
+        column = 23
+        line = 2
+        let networkUpdateType = networkUpdate.type.displayText()
+        print("\u{1B}[\(line);\(column)H\(networkUpdateType)", terminator: "")
 
-        column = xOffset + 23 - UInt8(r)
+        column = 23
         line += 1
-//        line = yOffset + 3
-        print("\u{1B}[\(line);\(column)H\(sentMessage)", terminator: "")
+//        print("\u{1B}[\(line);\(column)H\(sentMessage)", terminator: "")
 
-        column = xOffset + 23 - UInt8(r)
+        column = 23
         line += 1
-//        line = yOffset + 4
-        print("\u{1B}[\(line);\(column)H\(specialAttributesStart)\(receivedMessage)\(specialAttributesEnd)")
+//        print("\u{1B}[\(line);\(column)H\(specialAttributesStart)\(receivedMessage)\(specialAttributesEnd)")
         
         print("\u{1B}[\(16);\(0)H")
         print("\u{1B}[\(TerminalCharacterAttribute.green.foreground);\(TerminalCharacterAttribute.black.background)m")
-        */
+        
     }
     
     private func attributesForStatus(_ status: Status) -> (Int, Int, String, String) {
@@ -207,28 +177,8 @@ public final class ConsoleOutputTool {
         return (foregroundColour, backgroundColour, specialAttributesStart, specialAttributesEnd)
     }
 
-    public func displayNode(nodeIndex: UInt8, address: String, sentMessage: String, receivedMessage: String, status: Status) {
+    public func displayNode(nodeIndex: UInt8, connectionType: String, address: String, sentMessage: String, receivedMessage: String, status: Status) {
         let (foregroundColour, backgroundColour, specialAttributesStart, specialAttributesEnd) = attributesForStatus(status)
-//        var foregroundColour = TerminalCharacterAttribute.green.foreground
-//        var backgroundColour = TerminalCharacterAttribute.black.background
-//         var specialAttributesStart = ""
-//         var specialAttributesEnd = ""
-//        if status == .success {
-//             foregroundColour = TerminalCharacterAttribute.white.foreground
-//             backgroundColour = TerminalCharacterAttribute.green.background
-//             specialAttributesStart = ""
-//             specialAttributesEnd = ""
-//        } else if status == .warning {
-//             foregroundColour = TerminalCharacterAttribute.black.foreground
-//             backgroundColour = TerminalCharacterAttribute.yellow.background
-//             specialAttributesStart = "\u{1B}[\(foregroundColour);\(backgroundColour);1;5;2m"
-//             specialAttributesEnd = "\u{1B}[0;\(foregroundColour);\(backgroundColour)m"
-//        } else if status == .error {
-//            foregroundColour = TerminalCharacterAttribute.yellow.foreground
-//            backgroundColour = TerminalCharacterAttribute.red.background
-//            specialAttributesStart = "\u{1B}[\(foregroundColour);\(backgroundColour);1;5;2m"
-//            specialAttributesEnd = "\u{1B}[0;\(foregroundColour);\(backgroundColour)m"
-//        }
         
         let heightOfInformationSection: UInt = 10
         
@@ -251,7 +201,7 @@ public final class ConsoleOutputTool {
         line += 1
         print("\u{1B}[\(line);\(column)H ┌──────────────────┬───────────────────────────────────────┐ ")
         line += 1
-        print("\u{1B}[\(line);\(column)H │          \u{1B}[1mAddress\u{1B}[0;\(foregroundColour);\(backgroundColour)m │                                       │ ")
+        print("\u{1B}[\(line);\(column)H │ \(connectionType) \u{1B}[1mAddress\u{1B}[0;\(foregroundColour);\(backgroundColour)m │                                       │ ")
         line += 1
         print("\u{1B}[\(line);\(column)H │     Sent Message │                                       │ ")
         line += 1
@@ -264,16 +214,14 @@ public final class ConsoleOutputTool {
         column = xOffset + 23 - UInt8(r)
         line = yOffset + 2
         line += heightOfInformationSection
-        print("\u{1B}[\(line);\(column)H\(address)", terminator: "")
+        print("\u{1B}[\(line);\(column)H\(nodeIndex)-\(address)", terminator: "")
 
         column = xOffset + 23 - UInt8(r)
         line += 1
-//        line = yOffset + 3
         print("\u{1B}[\(line);\(column)H\(sentMessage)", terminator: "")
 
         column = xOffset + 23 - UInt8(r)
         line += 1
-//        line = yOffset + 4
         print("\u{1B}[\(line);\(column)H\(specialAttributesStart)\(receivedMessage)\(specialAttributesEnd)")
         
         print("\u{1B}[\(16);\(0)H")
