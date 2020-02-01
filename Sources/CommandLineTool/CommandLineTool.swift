@@ -86,7 +86,7 @@ public final class CommandLineTool {
                     print("updateHandler: error \(error)")
                 }
 
-                if let information = dictionary["information"] {
+                if dictionary["information"] != nil {
                     
                     for key in dictionary.keys.sorted() {
                         guard let nodeUpdate = dictionary[key] else { break }
@@ -95,12 +95,14 @@ public final class CommandLineTool {
                             nodeUpdate.type == .socketClosed {
                             let (anAddress, aPort) = NetworkAddress.extractAddress(node.address, andPort: node.port)
                             self.connectedNodes["\(anAddress):\(aPort)"] = nil
-                            self.consoleOutputTool?.clearDisplay()
-                            self.consoleOutputTool?.displayInformation(networkUpdate: nodeUpdate, error: nil, status: .information)
+                            print("\(anAddress):\(aPort)      \(nodeUpdate.type.displayText())")
+//                            self.consoleOutputTool?.clearDisplay()
+//                            self.consoleOutputTool?.displayInformation(networkUpdate: nodeUpdate, error: nil, status: .information)
                             self.redrawConnectedNodes()
                         } else if nodeUpdate.type == .shutDown {
-                            self.consoleOutputTool?.clearDisplay()
-                            self.consoleOutputTool?.displayInformation(networkUpdate: nodeUpdate, error: nil, status: .information)
+                            print("      \(nodeUpdate.type.displayText())")
+//                            self.consoleOutputTool?.clearDisplay()
+//                            self.consoleOutputTool?.displayInformation(networkUpdate: nodeUpdate, error: nil, status: .information)
                         }
                     }
                 } else {
@@ -119,14 +121,17 @@ public final class CommandLineTool {
     }
     
     private func redrawConnectedNodes() {
-        for (index, key) in self.connectedNodes.keys.sorted().enumerated() {
+        for (_, key) in self.connectedNodes.keys.sorted().enumerated() {
             guard let nodeUpdate = self.connectedNodes[key] else { break }
             if let node = nodeUpdate.node {
                 let (anAddress, aPort) = NetworkAddress.extractAddress(node.address, andPort: node.port)
                 let sentMessage = node.sentNetworkUpdateType.displayText()
                 let receivedMessage = node.receivedNetworkUpdateType.displayText()
                 let connectionType = node.connectionType.displayText()
-                self.consoleOutputTool?.displayNode(nodeIndex: UInt8(index), connectionType: connectionType, address: "\(anAddress):\(aPort)", sentMessage: sentMessage, receivedMessage: receivedMessage, status: .success)
+
+                print("\(anAddress):\(aPort)     \(connectionType)   \(sentMessage)   \(receivedMessage) \(nodeUpdate.type.displayText())")
+                
+//                self.consoleOutputTool?.displayNode(nodeIndex: UInt8(index), connectionType: connectionType, address: "\(anAddress):\(aPort)", sentMessage: sentMessage, receivedMessage: receivedMessage, status: .success)
             }
         }
     }
