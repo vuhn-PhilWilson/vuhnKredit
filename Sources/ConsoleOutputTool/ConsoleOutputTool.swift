@@ -112,10 +112,7 @@ public final class ConsoleOutputTool {
     public func displayInformation(networkUpdate: NetworkUpdate, error: Error?, status: Status) {
 
         let (foregroundColour, backgroundColour, specialAttributesStart, specialAttributesEnd) = attributesForStatus(status)
-        
-        let height: Float32 = 10
-        let width: Float32 = 63
-        
+
         var column = 0
         var line = 0
     
@@ -142,11 +139,15 @@ public final class ConsoleOutputTool {
 
         column = 23
         line += 1
-//        print("\u{1B}[\(line);\(column)H\(sentMessage)", terminator: "")
+        if let message = networkUpdate.message1 {
+            print("\u{1B}[\(line);\(column)H\(message)", terminator: "")
+        }
 
         column = 23
         line += 1
-//        print("\u{1B}[\(line);\(column)H\(specialAttributesStart)\(receivedMessage)\(specialAttributesEnd)")
+        if let message = networkUpdate.message2 {
+            print("\u{1B}[\(line);\(column)H\(specialAttributesStart)\(message)\(specialAttributesEnd)", terminator: "")
+        }
         
         print("\u{1B}[\(16);\(0)H")
         print("\u{1B}[\(TerminalCharacterAttribute.green.foreground);\(TerminalCharacterAttribute.black.background)m")
@@ -179,6 +180,9 @@ public final class ConsoleOutputTool {
 
     public func displayNode(nodeIndex: UInt8, connectionType: String, address: String, sentMessage: String, receivedMessage: String, status: Status) {
         let (foregroundColour, backgroundColour, specialAttributesStart, specialAttributesEnd) = attributesForStatus(status)
+        
+        print("sentMessage = \(sentMessage)")
+        print("receivedMessage = \(receivedMessage)")
         
         let heightOfInformationSection: UInt = 10
         
