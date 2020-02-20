@@ -6,25 +6,27 @@
 //
 
 import Foundation
+import CoreFoundation
 import vuhnNetwork
 import ConfigurationTool
 
 public final class CommandLineTool {
     private var configurationTool: ConfigurationTool
-    
     private var connectedNodes = [String: NetworkUpdate]()
-
     private let arguments: [String]
-    
     private var nodeManager = NodeManager()
-    
-    public func close() {
-        nodeManager.close()
-    }
+    private var shuttingDown = false
+    private var timer : DispatchSourceTimer?
 
     public init(configurationTool: ConfigurationTool, arguments: [String] = CommandLine.arguments) {
         self.configurationTool = configurationTool
         self.arguments = arguments
+    }
+
+    public func close() {
+        shuttingDown = true
+        nodeManager.close()
+        shutDownTimer()
     }
 
     public func run() throws {
@@ -91,6 +93,28 @@ public final class CommandLineTool {
         nodeManager.startListening()
         nodeManager.connectToOutboundNodes()
         
+        timer = DispatchSource.makeTimerSource(flags: [], queue: DispatchQueue.main)
+        
+        timer?.schedule(deadline: .now(), repeating: .seconds(5))
+        timer?.setEventHandler
+        {
+            if self.shuttingDown == true {
+                self.shutDownTimer()
+                return
+            }
+//            print("nodeManager.nodes.count \(self.nodeManager.nodes.count)")
+            for node in self.nodeManager.nodes {
+                print("node \(node.address):\(node.port) \(node.connectionType) last sent \(node.sentCommand) last received \(node.receivedCommand)")
+            }
+        }
+        timer?.resume()
+    
         dispatchMain()
+    }
+    
+    private func shutDownTimer() {
+        print("shutDown Timer")
+        self.timer?.cancel()
+        self.timer?.setEventHandler {}
     }
 }
