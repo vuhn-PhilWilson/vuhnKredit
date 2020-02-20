@@ -6,26 +6,31 @@
 //
 
 import Foundation
+import CoreFoundation
 import vuhnNetwork
-import ConsoleOutputTool
 import ConfigurationTool
 
-
 public final class CommandLineTool {
-    private var consoleOutputTool: ConsoleOutputTool?
     private var configurationTool: ConfigurationTool
-    
     private var connectedNodes = [String: NetworkUpdate]()
-
     private let arguments: [String]
+    private var nodeManager = NodeManager()
+    private var shuttingDown = false
+    private var timer : DispatchSourceTimer?
 
     public init(configurationTool: ConfigurationTool, arguments: [String] = CommandLine.arguments) {
-        self.consoleOutputTool = configurationTool.configurationModel.consoleOutputTool
         self.configurationTool = configurationTool
         self.arguments = arguments
     }
 
+    public func close() {
+        shuttingDown = true
+        nodeManager.close()
+        shutDownTimer()
+    }
+
     public func run() throws {
+        
         if CommandLine.arguments.contains("-help") {
             configurationTool.configurationModel.printUsage()
             return
@@ -78,92 +83,38 @@ public final class CommandLineTool {
                 }
             }
         }
-
         print("\n\nconfigurationTool.configurationModel.addressesArray\n\(configurationTool.configurationModel.addressesArray)\n\n")
-        if let listeningPortString = configurationTool.configurationModel.configurationDictionary[.listeningPort],
-            let listenPortInt = Int(listeningPortString) {
-            makeOutBoundConnections(to: configurationTool.configurationModel.addressesArray, listenPort: listenPortInt) { (dictionary, error) in
-                print("dictionary \(dictionary)")
-                if let error = error {
-                    print("updateHandler: error \(error)")
-                }
-
-                self.consoleOutputTool?.clearDisplay()
-                if dictionary["information"] != nil {
-                    
-                    for key in dictionary.keys.sorted() {
-                        guard let nodeUpdate = dictionary[key] else { break }
-                        
-                        if let node = nodeUpdate.node,
-                            nodeUpdate.type == .socketClosed {
-                            let (anAddress, aPort) = NetworkAddress.extractAddress(node.address, andPort: node.port)
-                            self.connectedNodes["\(anAddress):\(aPort)"] = nil
-//                            print("\(anAddress):\(aPort)      \(nodeUpdate.type.displayText())   \(nodeUpdate.message1)    \(nodeUpdate.message2)")
-//                            self.consoleOutputTool?.clearDisplay()
-                            self.consoleOutputTool?.displayInformation(networkUpdate: nodeUpdate, error: nil, status: .information)
-//                            self.redrawConnectedNodes()
-                        } else if nodeUpdate.type == .shutDown {
-//                            print("    \(nodeUpdate.type.displayText())   \(nodeUpdate.message1)    \(nodeUpdate.message2)")
-//                            self.consoleOutputTool?.clearDisplay()
-                            self.consoleOutputTool?.displayInformation(networkUpdate: nodeUpdate, error: nil, status: .information)
-                        } else {
-//                            print("    \(nodeUpdate.type.displayText())   \(nodeUpdate.message1)    \(nodeUpdate.message2)")
-                            self.consoleOutputTool?.displayInformation(networkUpdate: nodeUpdate, error: nil, status: .information)
-                        }
-                        //self.redrawConnectedNodes()
-                    }
-                }
-                // Use sorted dictionary keys
-                for key in dictionary.keys.sorted() {
-                    if key == "information" { continue }
-                    guard let nodeUpdate = dictionary[key],
-                        let node = nodeUpdate.node else { break }
-                    let (anAddress, aPort) = NetworkAddress.extractAddress(node.address, andPort: node.port)
-                    self.connectedNodes["\(anAddress):\(aPort)"] = nodeUpdate
-                }
-                self.redrawConnectedNodes()
-                
-            
+        var listeningPort: Int? = nil
+        if let listeningPortString = configurationTool.configurationModel.configurationDictionary[.listeningPort] {
+            listeningPort = Int(listeningPortString)
+        }
+        nodeManager.configure(with: configurationTool.configurationModel.addressesArray, and: listeningPort ?? -1)
+        
+        nodeManager.startListening()
+        nodeManager.connectToOutboundNodes()
+        
+        timer = DispatchSource.makeTimerSource(flags: [], queue: DispatchQueue.main)
+        
+        timer?.schedule(deadline: .now(), repeating: .seconds(5))
+        timer?.setEventHandler
+        {
+            if self.shuttingDown == true {
+                self.shutDownTimer()
+                return
+            }
+//            print("nodeManager.nodes.count \(self.nodeManager.nodes.count)")
+            for node in self.nodeManager.nodes {
+                print("node \(node.address):\(node.port) \(node.connectionType) last sent \(node.sentCommand) last received \(node.receivedCommand)")
             }
         }
+        timer?.resume()
+    
+        dispatchMain()
     }
     
-    private func redrawConnectedNodes() {
-        for (index, key) in self.connectedNodes.keys.sorted().enumerated() {
-            guard let nodeUpdate = self.connectedNodes[key] else { break }
-            print("key = \(key)")
-            if let node = nodeUpdate.node {
-                let (anAddress, aPort) = NetworkAddress.extractAddress(node.address, andPort: node.port)
-                let sentMessage = node.sentNetworkUpdateType.displayText()
-                let receivedMessage = node.receivedNetworkUpdateType.displayText()
-                let connectionType = node.connectionType.displayText()
-
-//                print("\(anAddress):\(aPort)     \(connectionType)   \(sentMessage)   \(receivedMessage) \(nodeUpdate.type.displayText())")
-
-                self.consoleOutputTool?.displayNode(nodeIndex: UInt8(index), connectionType: connectionType, address: "\(anAddress):\(aPort)", sentMessage: nodeUpdate.message1 ?? "", receivedMessage: nodeUpdate.message2 ?? "", status: .success)
-
-//                self.consoleOutputTool?.displayNode(nodeIndex: UInt8(index), connectionType: connectionType, address: "\(anAddress):\(aPort)", sentMessage: sentMessage, receivedMessage: receivedMessage, status: .success)
-            }
-        }
-    }
-    
-    private func printConfigurationData() {
-        print("printConfigurationData\n")
-        
-        print("configurationModel.configurationDictionary:")
-        for configurationData in configurationTool.configurationModel.configurationDictionary {
-            print("                \(configurationData.key) \(configurationData.value)")
-        }
-        print("")
-        
-        print("configurationModel.addressesArray:")
-        if configurationTool.configurationModel.addressesArray.isEmpty {
-            print("                Empty")
-        } else {
-            for address in configurationTool.configurationModel.addressesArray {
-                print("                \(address)")
-            }
-        }
-        print("")
+    private func shutDownTimer() {
+        print("shutDown Timer")
+        self.timer?.cancel()
+        self.timer?.setEventHandler {}
     }
 }

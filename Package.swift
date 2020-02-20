@@ -6,7 +6,7 @@ let package = Package(
     name: "vuhnKredit",
     dependencies: [
 //        .package(path: "../vuhnNetwork")
-        .package(url: "https://github.com/vuhn-PhilWilson/vuhnNetwork", from: "0.0.3")
+        .package(url: "https://github.com/vuhn-PhilWilson/vuhnNetwork", from: "0.0.4")
     ],
     targets: [
         .target(
@@ -16,14 +16,11 @@ let package = Package(
             name: "FileService",
             dependencies: []),
         .target(
-            name: "ConsoleOutputTool",
-            dependencies: ["vuhnNetwork"]),
-        .target(
             name: "CommandLineTool",
-            dependencies: ["vuhnNetwork", "ConfigurationTool", "ConsoleOutputTool"]),
+            dependencies: ["vuhnNetwork", "ConfigurationTool"]),
         .target(
             name: "ConfigurationTool",
-            dependencies: ["ConsoleOutputTool", "FileService"]),
+            dependencies: ["FileService"]),
         .testTarget(
             name: "vuhnKreditTests",
             dependencies: ["vuhnKredit", "ConfigurationTool"]),
