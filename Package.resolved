@@ -18,15 +18,6 @@
           "revision": "c46a3d41f5b2401d18bcb46d0101cdc5cd13e307",
           "version": "1.0.52"
         }
-      },
-      {
-        "package": "vuhnNetwork",
-        "repositoryURL": "https://github.com/vuhn-PhilWilson/vuhnNetwork",
-        "state": {
-          "branch": null,
-          "revision": "cd778cbb20c106fd8422cd98eabaf5cf331fd643",
-          "version": "0.0.3"
-        }
       }
     ]
   },
