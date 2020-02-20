@@ -5,8 +5,8 @@ import PackageDescription
 let package = Package(
     name: "vuhnKredit",
     dependencies: [
-        .package(path: "../vuhnNetwork")
-//        .package(url: "https://github.com/vuhn-PhilWilson/vuhnNetwork", from: "0.0.3")
+//        .package(path: "../vuhnNetwork")
+        .package(url: "https://github.com/vuhn-PhilWilson/vuhnNetwork", from: "0.0.4")
     ],
     targets: [
         .target(
