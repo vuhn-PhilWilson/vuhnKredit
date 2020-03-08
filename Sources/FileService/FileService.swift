@@ -176,7 +176,6 @@ public class FileService {
     }
     
     public func writeNodeDataToFile(with filePath: URL, node: vuhnNetwork.Node) {
-        print("Writing node \(node.name) data to file")
         if !fileManager.fileExists(atPath: filePath.path) {
             return
         }
