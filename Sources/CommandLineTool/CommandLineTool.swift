@@ -9,6 +9,7 @@ import Foundation
 import CoreFoundation
 import vuhnNetwork
 import ConfigurationTool
+import FileService
 
 public final class CommandLineTool {
     private var configurationTool: ConfigurationTool
@@ -30,6 +31,11 @@ public final class CommandLineTool {
     }
 
     public func run() throws {
+        
+        print("\nconfiguration Dictionary\n    \(configurationTool.configurationModel.configurationDictionary)\n")
+
+        configurationTool.configurationModel.configurationDictionary[.dataDirectory] = FileService.dataDirectoryPath().absoluteString
+        
         
         if CommandLine.arguments.contains("-help") {
             configurationTool.configurationModel.printUsage()
@@ -69,10 +75,15 @@ public final class CommandLineTool {
                 let command = arguments[index]
                 if command == "-dataDirectory" {
                     let path = arguments[index+1]
+                    if configurationTool.configurationModel.configurationDictionary[.dataDirectory] != nil {
+                        print("Commandline dataDirectory flag overrides configuration file")
+                        print("dataDirectory was \(configurationTool.configurationModel.configurationDictionary[.dataDirectory]!)")
+                    }
                     configurationTool.configurationModel.configurationDictionary[.dataDirectory] = path
                 }
             }
         }
+        
         configurationTool.configurationModel.configurationDictionary[.listeningPort] = "8333"
         if CommandLine.arguments.contains("-\(ConfigurationModel.OptionType.listeningPort.rawValue)") {
             for index in 0..<arguments.count {
@@ -88,10 +99,44 @@ public final class CommandLineTool {
         if let listeningPortString = configurationTool.configurationModel.configurationDictionary[.listeningPort] {
             listeningPort = Int(listeningPortString)
         }
-        nodeManager.configure(with: configurationTool.configurationModel.addressesArray, and: listeningPort ?? -1)
         
-        nodeManager.startListening()
-        nodeManager.connectToOutboundNodes()
+        if let seedAddresses = nodeManager.dnsSeedAddresses() {
+            print("Found \(seedAddresses.count) seed Addresses")
+            
+            if let dataDirectory = configurationTool.configurationModel.configurationDictionary[.dataDirectory],
+                let dataPath = URL(string: "file://\(dataDirectory.replacingOccurrences(of: "\"", with: ""))") {
+                print("dataDirectory = \(dataDirectory)")
+                nodeManager.configure(with: seedAddresses)
+                configurationTool.initialiseNodesFile(with: dataPath, nodes: nodeManager.nodes, forced: true)
+                nodeManager.nodes.removeAll()
+                
+                // Connect to a few random seed addresses
+                var addedNodes = 0
+                let numberOfConnections = 30//seedAddresses.count
+                while addedNodes < numberOfConnections && seedAddresses.count >= numberOfConnections {
+                    let randomNode = Int.random(in: 0..<seedAddresses.count)
+                    let node = seedAddresses[randomNode]
+//                     let node = seedAddresses[addedNodes]
+                    print("Adding node \(node) at index \(randomNode)")
+                    if !configurationTool.configurationModel.addressesArray.contains(node) {
+                        configurationTool.configurationModel.addressesArray.append(node)
+                        addedNodes += 1
+                    } else {
+                        print("Found node collision for index \(randomNode)")
+                    }
+                }
+            } else {
+                if let dataDirectory = configurationTool.configurationModel.configurationDictionary[.dataDirectory] {
+                    print("error with creating URL with dataDirectory \(dataDirectory)")
+                } else {
+                    print("error with configurationDictionary dataDirectory")
+                }
+            }
+        }
+        
+        nodeManager.configure(with: configurationTool.configurationModel.addressesArray, and: listeningPort ?? -1)
+
+        print("Starting timer")
         
         timer = DispatchSource.makeTimerSource(flags: [], queue: DispatchQueue.main)
         
@@ -102,14 +147,26 @@ public final class CommandLineTool {
                 self.shutDownTimer()
                 return
             }
-//            print("nodeManager.nodes.count \(self.nodeManager.nodes.count)")
+            var countOfUnknownNodes = 0
             for node in self.nodeManager.nodes {
-                print("node \(node.address):\(node.port) \(node.connectionType) last sent \(node.sentCommand) last received \(node.receivedCommand)")
+                print("node \(node.name) \(node.connectionType) last sent \(node.sentCommand) last received \(node.receivedCommand)")
             }
+            for node in self.nodeManager.nodes {
+                if node.receivedCommand == .unknown {
+                    countOfUnknownNodes += 1
+                }
+            }
+            print("\n\(self.nodeManager.nodes.count - countOfUnknownNodes) successful node connections\n\(countOfUnknownNodes) of \(self.nodeManager.nodes.count) nodes unknown\n")
         }
         timer?.resume()
-    
-        dispatchMain()
+        
+        nodeManager.startListening()
+        nodeManager.connectToOutboundNodes()
+        
+        // Keep console program alive
+        // to allow netowrk streaming to continue
+        CFRunLoopRun()
+//        dispatchMain()
     }
     
     private func shutDownTimer() {

@@ -11,12 +11,12 @@
         }
       },
       {
-        "package": "Socket",
-        "repositoryURL": "https://github.com/IBM-Swift/BlueSocket.git",
+        "package": "swift-nio",
+        "repositoryURL": "https://github.com/apple/swift-nio.git",
         "state": {
           "branch": null,
-          "revision": "c46a3d41f5b2401d18bcb46d0101cdc5cd13e307",
-          "version": "1.0.52"
+          "revision": "16ab4d657e1ad4e77bd5f8b94af8538561643053",
+          "version": "2.14.0"
         }
       },
       {
@@ -24,8 +24,8 @@
         "repositoryURL": "https://github.com/vuhn-PhilWilson/vuhnNetwork",
         "state": {
           "branch": null,
-          "revision": "a8d6941ae0c5be639a41d7ef7d219f5c6b655efc",
-          "version": "0.0.4"
+          "revision": "6aa9f18f377e2a4e2270894e5aadf59605066730",
+          "version": "0.0.5"
         }
       }
     ]
