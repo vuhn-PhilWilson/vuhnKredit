@@ -9,7 +9,7 @@ let package = Package(
     ],
     dependencies: [
 //        .package(path: "../vuhnNetwork")
-        .package(url: "https://github.com/vuhn-PhilWilson/vuhnNetwork", from: "0.0.5")
+        .package(url: "https://github.com/vuhn-PhilWilson/vuhnNetwork", from: "0.0.6")
     ],
     targets: [
         .target(

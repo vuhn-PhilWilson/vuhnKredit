@@ -11,7 +11,7 @@ import vuhnNetwork
 import ConfigurationTool
 import FileService
 
-public final class CommandLineTool {
+public final class CommandLineTool: NodeManagerDelegate {
     private var configurationTool: ConfigurationTool
     private var connectedNodes = [String: NetworkUpdate]()
     private let arguments: [String]
@@ -22,6 +22,7 @@ public final class CommandLineTool {
     public init(configurationTool: ConfigurationTool, arguments: [String] = CommandLine.arguments) {
         self.configurationTool = configurationTool
         self.arguments = arguments
+        nodeManager.nodeManagerDelegate = self
     }
 
     public func close() {
@@ -112,7 +113,7 @@ public final class CommandLineTool {
                 
                 // Connect to a few random seed addresses
                 var addedNodes = 0
-                let numberOfConnections = 30//seedAddresses.count
+                let numberOfConnections = 5//seedAddresses.count
                 while addedNodes < numberOfConnections && seedAddresses.count >= numberOfConnections {
                     let randomNode = Int.random(in: 0..<seedAddresses.count)
                     let node = seedAddresses[randomNode]
@@ -136,7 +137,7 @@ public final class CommandLineTool {
         
         nodeManager.configure(with: configurationTool.configurationModel.addressesArray, and: listeningPort ?? -1)
 
-        print("Starting timer")
+        print("Starting console display update timer")
         
         timer = DispatchSource.makeTimerSource(flags: [], queue: DispatchQueue.main)
         
@@ -170,8 +171,19 @@ public final class CommandLineTool {
     }
     
     private func shutDownTimer() {
-        print("shutDown Timer")
+        print("shutDown console display Timer")
         self.timer?.cancel()
         self.timer?.setEventHandler {}
+    }
+    
+    // MARK: - NodeManager Delegate
+    
+    public func addressesUpdated(for nodes: [Node]) {
+        if let dataDirectory = configurationTool.configurationModel.configurationDictionary[.dataDirectory],
+            let dataPath = URL(string: "file://\(dataDirectory.replacingOccurrences(of: "\"", with: ""))") {
+            print("dataDirectory = \(dataDirectory)")
+            // Re-generate nodes.csv file from scratch with supplied data
+            configurationTool.initialiseNodesFile(with: dataPath, nodes: nodes, forced: true)
+        }
     }
 }
