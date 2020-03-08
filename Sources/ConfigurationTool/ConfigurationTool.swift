@@ -7,6 +7,7 @@
 
 import Foundation
 import FileService
+import vuhnNetwork
 
 public final class ConfigurationTool {
     public let configurationModel = ConfigurationModel()
@@ -29,6 +30,21 @@ public final class ConfigurationTool {
                     configurationModel.configurationDictionary[.dataDirectory] = value
                 }
             }
+        }
+    }
+        
+    public func initialiseNodesFile(with path: URL, nodes: [vuhnNetwork.Node]? = nil, forced: Bool = false) {
+        let fileService = FileService()
+        if let fileName = fileService.generateDefaultNodeFile(with: path, forced: forced),
+            let nodes = nodes {
+            addNodesToFile(with: fileName, nodes: nodes)
+        }
+    }
+    
+    public func addNodesToFile(with path: URL, nodes: [vuhnNetwork.Node]) {
+        let fileService = FileService()
+        for node in nodes {
+            fileService.writeNodeDataToFile(with: path, node: node)
         }
     }
 }
