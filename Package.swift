@@ -8,8 +8,8 @@ let package = Package(
         .macOS(.v10_13)
     ],
     dependencies: [
-//        .package(path: "../vuhnNetwork")
-        .package(url: "https://github.com/vuhn-PhilWilson/vuhnNetwork", from: "0.0.6")
+        .package(path: "../vuhnNetwork")
+//        .package(url: "https://github.com/vuhn-PhilWilson/vuhnNetwork", from: "0.0.6")
     ],
     targets: [
         .target(
