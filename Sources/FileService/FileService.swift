@@ -135,13 +135,13 @@ public class FileService {
         let libraryDirectory = FileManager.default.urls(for: .libraryDirectory, in: .userDomainMask)[0]
         let appName = String(CommandLine.arguments[0]).split(separator: "/").last!
         let dataDirectory = libraryDirectory.appendingPathComponent("Application Support/\(appName)")
-        print("macOS: dataDirectory = \(dataDirectory)")
+//        print("macOS: dataDirectory = \(dataDirectory)")
         return dataDirectory
         #else
         let homeDirectory = FileManager.default.homeDirectoryForCurrentUser
         let appName = String(CommandLine.arguments[0]).split(separator: "/").last!
         let dataDirectory = homeDirectory.appendingPathComponent(".\(appName)")
-        print("linux: dataDirectory = \(dataDirectory)")
+//        print("linux: dataDirectory = \(dataDirectory)")
         return dataDirectory
         #endif
     }
@@ -158,7 +158,7 @@ public class FileService {
             return nil
         }
 
-        let defaultDataString = "Addr,Attempts,LastAttempt,LastSuccess,Location,Latency,Services,Src,SrcServices,TimeStamp,ConnectFailure,ReceivePongFailure,ReceiveGetAddrResponseFailure\n"
+        let defaultDataString = "Addr,Attempts,LastAttempt,LastSuccess,Location,Latency,Services,Src,SrcServices,TimeStamp,ConnectFailure,ReceiveVerAckFailure,ReceivePongFailure,ReceiveGetAddrResponseFailure\n"
         let defaultData = defaultDataString.data(using: .utf8)
         
         let filePath = path.appendingPathComponent("\(defaultNodeFileName)")
@@ -166,9 +166,9 @@ public class FileService {
             print("\(defaultNodeFileName) doesn't exist. Creating file ...")
             fileManager.createFile(atPath: filePath.path, contents: defaultData, attributes: nil)
         } else {
-            print("\(defaultNodeFileName) already exists.")
+//            print("\(defaultNodeFileName) already exists.")
             if forced == true {
-                print("Overwriting \(defaultNodeFileName)")
+//                print("Overwriting \(defaultNodeFileName)")
                 fileManager.createFile(atPath: filePath.path, contents: defaultData, attributes: nil)
             }
         }
@@ -202,21 +202,21 @@ public class FileService {
 
         var nodes = [vuhnNetwork.Node]()
         var skipFirstLine = false
+        
+        enum Fields: Int {
+            case Addr,Attempts,LastAttempt,LastSuccess,Location,Latency,Services,Src,SrcServices,TimeStamp,ConnectFailure,ReceiveVerAckFailure,ReceivePongFailure,ReceiveGetAddrResponseFailure
+        }
         for line in reader {
             if !skipFirstLine {
                 skipFirstLine = true
                 continue
             }
-            
-            enum Fields: Int {
-                case Addr,Attempts,LastAttempt,LastSuccess,Location,Latency,Services,Src,SrcServices,TimeStamp,ConnectFailure,ReceivePongFailure,ReceiveGetAddrResponseFailure
-            }
-            // Addr,Attempts,LastAttempt,LastSuccess,Location,Latency,Services,Src,SrcServices,TimeStamp,ConnectFailure,ReceivePongFailure,ReceiveGetAddrResponseFailure
+            // Addr,Attempts,LastAttempt,LastSuccess,Location,Latency,Services,Src,SrcServices,TimeStamp,ConnectFailure,ReceiveVerAckFailure,ReceivePongFailure,ReceiveGetAddrResponseFailure
             // 0000:0000:0000:0000:0000:ffff:157.230.41.128:8333,1,1583649882,1583649882,¯\_(ツ)_/¯,4294967295,37,unknown,0,1583649984
             
             let splitLine = line.split(separator: ",")
-            if splitLine.count != 13 {
-                print("readInNodes: Error splitLine.count is not 13. It is \(splitLine.count)")
+            if splitLine.count != 14 {
+                print("readInNodes: Error splitLine.count is not 14. It is \(splitLine.count)")
                 continue
             }
             
@@ -231,6 +231,7 @@ public class FileService {
             let srcServices = splitLine[Fields.SrcServices.rawValue]
             let timeStamp = splitLine[Fields.TimeStamp.rawValue]
             let connectFailure = splitLine[Fields.ConnectFailure.rawValue]
+            let receiveVerAckFailure = splitLine[Fields.ReceiveVerAckFailure.rawValue]
             let receivePongFailure = splitLine[Fields.ReceivePongFailure.rawValue]
             let receiveGetAddrResponseFailure = splitLine[Fields.ReceiveGetAddrResponseFailure.rawValue]
             
@@ -242,6 +243,13 @@ public class FileService {
 //                print("readInNodes: Found IPV6 address \(addressFieldSplit.joined(separator: ":"))")
                 continue
             }
+            
+            if addressFieldSplit.count == 2 {
+                let newNode = Node(address: "\(addressFieldSplit[0]):\(addressFieldSplit[1])")
+                nodes.append(newNode)
+                continue
+            }
+            
             if addressFieldSplit.count != 8 {
                 print("readInNodes: Error addressFieldSplit.count is not 8. It is \(addressFieldSplit.count) for \(addressFieldSplit)")
                 continue
