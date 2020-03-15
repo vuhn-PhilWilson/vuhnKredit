@@ -47,4 +47,9 @@ public final class ConfigurationTool {
             fileService.writeNodeDataToFile(with: path, node: node)
         }
     }
+    
+    public func readNodesFromFile(with path: URL) -> [vuhnNetwork.Node]? {
+        let fileService = FileService()
+        return fileService.readInNodes(with: path)
+    }
 }

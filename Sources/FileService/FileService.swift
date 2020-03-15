@@ -135,13 +135,13 @@ public class FileService {
         let libraryDirectory = FileManager.default.urls(for: .libraryDirectory, in: .userDomainMask)[0]
         let appName = String(CommandLine.arguments[0]).split(separator: "/").last!
         let dataDirectory = libraryDirectory.appendingPathComponent("Application Support/\(appName)")
-        print("macOS: dataDirectory = \(dataDirectory)")
+//        print("macOS: dataDirectory = \(dataDirectory)")
         return dataDirectory
         #else
         let homeDirectory = FileManager.default.homeDirectoryForCurrentUser
         let appName = String(CommandLine.arguments[0]).split(separator: "/").last!
         let dataDirectory = homeDirectory.appendingPathComponent(".\(appName)")
-        print("linux: dataDirectory = \(dataDirectory)")
+//        print("linux: dataDirectory = \(dataDirectory)")
         return dataDirectory
         #endif
     }
@@ -157,8 +157,8 @@ public class FileService {
             print("Unable to create directory \(error.debugDescription)")
             return nil
         }
-        
-        let defaultDataString = "Addr,Attempts,LastAttempt,LastSuccess,Location,Latency,Services,Src,SrcServices,TimeStamp\n"
+
+        let defaultDataString = "Addr,Attempts,LastAttempt,LastSuccess,Location,Latency,Services,Src,SrcServices,TimeStamp,ConnectFailure,ReceiveVerAckFailure,ReceivePongFailure,ReceiveGetAddrResponseFailure\n"
         let defaultData = defaultDataString.data(using: .utf8)
         
         let filePath = path.appendingPathComponent("\(defaultNodeFileName)")
@@ -166,9 +166,9 @@ public class FileService {
             print("\(defaultNodeFileName) doesn't exist. Creating file ...")
             fileManager.createFile(atPath: filePath.path, contents: defaultData, attributes: nil)
         } else {
-            print("\(defaultNodeFileName) already exists.")
+//            print("\(defaultNodeFileName) already exists.")
             if forced == true {
-                print("Overwriting \(defaultNodeFileName)")
+//                print("Overwriting \(defaultNodeFileName)")
                 fileManager.createFile(atPath: filePath.path, contents: defaultData, attributes: nil)
             }
         }
@@ -189,4 +189,110 @@ public class FileService {
             print("Can't open fileHandle")
         }
     }
+    
+    public func readInNodes(with filePath: URL) -> [vuhnNetwork.Node]? {
+        let fileName = filePath.appendingPathComponent("\(defaultNodeFileName)")
+        if !fileManager.fileExists(atPath: fileName.path) {
+            return nil
+        }
+        
+        guard let reader = LineReader(path: fileName.path) else {
+            return nil // cannot open file
+        }
+
+        var nodes = [vuhnNetwork.Node]()
+        var skipFirstLine = false
+        
+        enum Fields: Int {
+            case Addr,Attempts,LastAttempt,LastSuccess,Location,Latency,Services,Src,SrcServices,TimeStamp,ConnectFailure,ReceiveVerAckFailure,ReceivePongFailure,ReceiveGetAddrResponseFailure
+        }
+        for line in reader {
+            if !skipFirstLine {
+                skipFirstLine = true
+                continue
+            }
+            // Addr,Attempts,LastAttempt,LastSuccess,Location,Latency,Services,Src,SrcServices,TimeStamp,ConnectFailure,ReceiveVerAckFailure,ReceivePongFailure,ReceiveGetAddrResponseFailure
+            // 0000:0000:0000:0000:0000:ffff:157.230.41.128:8333,1,1583649882,1583649882,¯\_(ツ)_/¯,4294967295,37,unknown,0,1583649984
+            
+            let splitLine = line.split(separator: ",")
+            if splitLine.count != 14 {
+                print("readInNodes: Error splitLine.count is not 14. It is \(splitLine.count)")
+                continue
+            }
+            
+            let addr = splitLine[Fields.Addr.rawValue]
+            let attempts = splitLine[Fields.Attempts.rawValue]
+            let lastAttempt = splitLine[Fields.LastAttempt.rawValue]
+            let lastSuccess = splitLine[Fields.LastSuccess.rawValue]
+            let location = splitLine[Fields.Location.rawValue]
+            let latency = splitLine[Fields.Latency.rawValue]
+            let services = splitLine[Fields.Services.rawValue]
+            let src = splitLine[Fields.Src.rawValue]
+            let srcServices = splitLine[Fields.SrcServices.rawValue]
+            let timeStamp = splitLine[Fields.TimeStamp.rawValue]
+            let connectFailure = splitLine[Fields.ConnectFailure.rawValue]
+            let receiveVerAckFailure = splitLine[Fields.ReceiveVerAckFailure.rawValue]
+            let receivePongFailure = splitLine[Fields.ReceivePongFailure.rawValue]
+            let receiveGetAddrResponseFailure = splitLine[Fields.ReceiveGetAddrResponseFailure.rawValue]
+            
+            
+            let addressFieldSplit = splitLine[0].split(separator: ":")
+            if addressFieldSplit.count == 9 {
+                // This is an IPV6 address
+                // Currently cannot connect to these addresses
+//                print("readInNodes: Found IPV6 address \(addressFieldSplit.joined(separator: ":"))")
+                continue
+            }
+            
+            if addressFieldSplit.count == 2 {
+                let newNode = Node(address: "\(addressFieldSplit[0]):\(addressFieldSplit[1])")
+                nodes.append(newNode)
+                continue
+            }
+            
+            if addressFieldSplit.count != 8 {
+                print("readInNodes: Error addressFieldSplit.count is not 8. It is \(addressFieldSplit.count) for \(addressFieldSplit)")
+                continue
+            }
+            let address = addressFieldSplit[6]
+            let port = addressFieldSplit[7]
+            let newNode = Node(address: "\(address):\(port)")
+            nodes.append(newNode)
+//            print("readInNodes: Adding \(newNode.name)")
+        }
+        return nodes
+    }
+}
+
+/// from https://stackoverflow.com/questions/24581517/read-a-file-url-line-by-line-in-swift
+/// Read text file line by line in efficient way
+public class LineReader {
+   public let path: String
+
+   fileprivate let file: UnsafeMutablePointer<FILE>!
+
+   init?(path: String) {
+      self.path = path
+      file = fopen(path, "r")
+      guard file != nil else { return nil }
+   }
+
+   public var nextLine: String? {
+      var line:UnsafeMutablePointer<CChar>? = nil
+      var linecap:Int = 0
+      defer { free(line) }
+      return getline(&line, &linecap, file) > 0 ? String(cString: line!) : nil
+   }
+
+   deinit {
+      fclose(file)
+   }
+}
+
+extension LineReader: Sequence {
+   public func  makeIterator() -> AnyIterator<String> {
+      return AnyIterator<String> {
+         return self.nextLine
+      }
+   }
 }

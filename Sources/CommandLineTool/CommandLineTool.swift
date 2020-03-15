@@ -100,42 +100,84 @@ public final class CommandLineTool: NodeManagerDelegate {
         if let listeningPortString = configurationTool.configurationModel.configurationDictionary[.listeningPort] {
             listeningPort = Int(listeningPortString)
         }
+
+        var storedNodes: [vuhnNetwork.Node]?
+        if let dataDirectory = configurationTool.configurationModel.configurationDictionary[.dataDirectory],
+            let dataPath = URL(string: "\(dataDirectory.replacingOccurrences(of: "\"", with: ""))") {
+//            print("dataDirectory = \(dataDirectory)")
+//            print("dataPath = \(dataPath)")
         
-        if let seedAddresses = nodeManager.dnsSeedAddresses() {
-            print("Found \(seedAddresses.count) seed Addresses")
-            
-            if let dataDirectory = configurationTool.configurationModel.configurationDictionary[.dataDirectory],
-                let dataPath = URL(string: "file://\(dataDirectory.replacingOccurrences(of: "\"", with: ""))") {
-                print("dataDirectory = \(dataDirectory)")
-                nodeManager.configure(with: seedAddresses)
-                configurationTool.initialiseNodesFile(with: dataPath, nodes: nodeManager.nodes, forced: true)
-                nodeManager.nodes.removeAll()
-                
-                // Connect to a few random seed addresses
-                var addedNodes = 0
-                let numberOfConnections = 5//seedAddresses.count
-                while addedNodes < numberOfConnections && seedAddresses.count >= numberOfConnections {
-                    let randomNode = Int.random(in: 0..<seedAddresses.count)
-                    let node = seedAddresses[randomNode]
-//                     let node = seedAddresses[addedNodes]
-                    print("Adding node \(node) at index \(randomNode)")
-                    if !configurationTool.configurationModel.addressesArray.contains(node) {
-                        configurationTool.configurationModel.addressesArray.append(node)
-                        addedNodes += 1
-                    } else {
-                        print("Found node collision for index \(randomNode)")
-                    }
-                }
+            storedNodes = configurationTool.readNodesFromFile(with: dataPath)
+            if let storedNodes = storedNodes {
+                print("Found \(storedNodes.count) stored nodes in \(dataPath)")
             } else {
-                if let dataDirectory = configurationTool.configurationModel.configurationDictionary[.dataDirectory] {
-                    print("error with creating URL with dataDirectory \(dataDirectory)")
+                print("No nodes found in \(dataPath)")
+            }
+        }
+        
+        // If there are stored nodes then use them
+        var selectedNodes: [vuhnNetwork.Node]?
+        var allNodes: [(TimeInterval, vuhnNetwork.Node)]?
+        if let storedNodes = storedNodes {
+            selectedNodes = getRandomNodes(from: storedNodes, for: 50)
+            allNodes = storedNodes.map { node in
+                return (TimeInterval(node.lastSuccess), node)
+            }
+            if let allNodes = allNodes {
+                let (_, firstNode) = allNodes[0]
+                print("allNodes \(allNodes.count)")
+                print("firstNode lastSuccess \(firstNode.lastSuccess)")
+                print("firstNode name \(firstNode.name)")
+            }
+        } else {
+            // Otherwise, nodes must be obtained from DNS seeders
+            if let seedAddresses = nodeManager.dnsSeedAddresses() {
+                print("Found \(seedAddresses.count) seed Addresses")
+                
+                if let dataDirectory = configurationTool.configurationModel.configurationDictionary[.dataDirectory],
+                    let dataPath = URL(string: "\(dataDirectory.replacingOccurrences(of: "\"", with: ""))") {
+//                        print("dataPath = \(dataPath)")
+//                        print("dataDirectory = \(dataDirectory)")
+                    nodeManager.configure(with: seedAddresses)
+                    configurationTool.initialiseNodesFile(with: dataPath, nodes: nodeManager.nodes, forced: true)
+                    nodeManager.nodes.removeAll()
+                    
+                    // Connect to a few random seed addresses
+                    var addedNodes = 0
+                    let numberOfConnections = 5//seedAddresses.count
+                    while addedNodes < numberOfConnections && seedAddresses.count >= numberOfConnections {
+                        let randomNode = Int.random(in: 0..<seedAddresses.count)
+                        let node = seedAddresses[randomNode]
+                        //                     let node = seedAddresses[addedNodes]
+                        print("Adding node \(node) at index \(randomNode)")
+                        if !configurationTool.configurationModel.addressesArray.contains(node) {
+                            configurationTool.configurationModel.addressesArray.append(node)
+                            addedNodes += 1
+                        } else {
+                            print("Found node collision for index \(randomNode)")
+                        }
+                    }
                 } else {
-                    print("error with configurationDictionary dataDirectory")
+                    if let dataDirectory = configurationTool.configurationModel.configurationDictionary[.dataDirectory] {
+                        print("error with creating URL with dataDirectory \(dataDirectory)")
+                    } else {
+                        print("error with configurationDictionary dataDirectory")
+                    }
                 }
             }
         }
         
-        nodeManager.configure(with: configurationTool.configurationModel.addressesArray, and: listeningPort ?? -1)
+        let aNode = vuhnNetwork.Node(address: "127.0.0.1")
+        let payload = GetHeadersMessage().serialize()
+        
+        
+        if let selectedNodes = selectedNodes {
+            print("configuring nodeManager with \(selectedNodes.count) selectedNodes")
+            nodeManager.configure(with: selectedNodes, and: 8333, allNodes: allNodes)
+        } else {
+            print("configuring nodeManager with \(configurationTool.configurationModel.addressesArray.count) addressesArray")
+            nodeManager.configure(with: configurationTool.configurationModel.addressesArray, and: listeningPort ?? -1, allNodes: allNodes)
+        }
 
         print("Starting console display update timer")
         
@@ -150,7 +192,7 @@ public final class CommandLineTool: NodeManagerDelegate {
             }
             var countOfUnknownNodes = 0
             for node in self.nodeManager.nodes {
-                print("node \(node.name) \(node.connectionType) last sent \(node.sentCommand) last received \(node.receivedCommand)")
+                print("node \(node.nameShortened.padding(toLength: 24, withPad: " ", startingAt: 0))\t\(node.connectionType)\tlast sent \(node.sentCommand.rawValue.padding(toLength: 12, withPad: " ", startingAt: 0))\tlast received \(node.receivedCommand.rawValue.padding(toLength: 12, withPad: " ", startingAt: 0))")
             }
             for node in self.nodeManager.nodes {
                 if node.receivedCommand == .unknown {
@@ -170,6 +212,39 @@ public final class CommandLineTool: NodeManagerDelegate {
 //        dispatchMain()
     }
     
+    private func getRandomNodes(from seedNodes:[vuhnNetwork.Node], for count: Int) -> [vuhnNetwork.Node]? {
+        print("get \(count) Random Nodes from \(seedNodes.count) seed nodes")
+        
+        // A few sanity checks
+        // At least 10 nodes must be available
+        // The requested number of nodes must be within this array
+        // Cannot request more than 10% of node list
+        // i.e. for a list of 1,000 nodes, cannot request more than 100
+        guard seedNodes.count > 10 else { return nil}
+        
+        var maxCount = count
+        if count >= seedNodes.count / 2 {
+            maxCount = seedNodes.count / 2
+        }
+        var selectedNodes = [vuhnNetwork.Node]()
+
+        // Connect to a few random seed addresses
+        var addedNodes = 0
+        while addedNodes < maxCount {
+            let randomNode = Int.random(in: 0..<seedNodes.count)
+            let node = seedNodes[randomNode]
+//            let node = seedNodes[addedNodes]
+            if !selectedNodes.contains(node) {
+                selectedNodes.append(node)
+                addedNodes += 1
+            } else {
+                print("Found node collision for index \(randomNode)")
+            }
+        }
+        
+        return selectedNodes
+    }
+    
     private func shutDownTimer() {
         print("shutDown console display Timer")
         self.timer?.cancel()
@@ -179,9 +254,39 @@ public final class CommandLineTool: NodeManagerDelegate {
     // MARK: - NodeManager Delegate
     
     public func addressesUpdated(for nodes: [Node]) {
+        print("Updating \(nodes.count) node addresses")
         if let dataDirectory = configurationTool.configurationModel.configurationDictionary[.dataDirectory],
             let dataPath = URL(string: "file://\(dataDirectory.replacingOccurrences(of: "\"", with: ""))") {
-            print("dataDirectory = \(dataDirectory)")
+//            print("dataDirectory = \(dataDirectory)")
+            
+            /*
+            let storedNodes = configurationTool.readNodesFromFile(with: dataPath)
+            if let storedNodes = storedNodes {
+                print("Found \(storedNodes.count) stored nodes in \(dataPath)")
+            } else {
+                print("No nodes found in \(dataPath)")
+            }
+            */
+            /*
+            for index in 0..<storedNodes.count {
+                let node = storedNodes[index]
+                if !self.networkAddresses.contains(where: { (arg0) -> Bool in
+                    let (_, networkAddressToCheck) = arg0
+                    return networkAddressToCheck.address == networkAddress.address
+                }) {
+                    let newNode = Node(address: networkAddress.address, port: networkAddress.port)
+                    newNode.services = networkAddress.services
+                    newNode.attemptsToConnect = 0
+                    newNode.lastAttempt = 0
+                    newNode.lastSuccess = 0
+                    newNode.src = sourceNode.name
+                    newNode.srcServices = sourceNode.services
+                    self.networkAddresses.append((timestamp, newNode))
+                    additionsCount += 1
+                }
+            }
+            */
+            
             // Re-generate nodes.csv file from scratch with supplied data
             configurationTool.initialiseNodesFile(with: dataPath, nodes: nodes, forced: true)
         }
