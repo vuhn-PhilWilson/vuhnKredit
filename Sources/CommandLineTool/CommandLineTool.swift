@@ -102,10 +102,21 @@ public final class CommandLineTool: NodeManagerDelegate {
         }
 
         var storedNodes: [vuhnNetwork.Node]?
+        var storedHeaders: [vuhnNetwork.Header]?
         if let dataDirectory = configurationTool.configurationModel.configurationDictionary[.dataDirectory],
             let dataPath = URL(string: "\(dataDirectory.replacingOccurrences(of: "\"", with: ""))") {
 //            print("dataDirectory = \(dataDirectory)")
 //            print("dataPath = \(dataPath)")
+
+            
+            storedHeaders = configurationTool.readHeadersFromFile(with: dataPath)
+            if let storedHeaders = storedHeaders {
+                print("Found \(storedHeaders.count) stored headers in \(dataPath)")
+            } else {
+                print("No headers found in \(dataPath)")
+                // Clear out headers data
+                configurationTool.initialiseHeadersFile(with: dataPath, headers: [], forced: true)
+            }
         
             storedNodes = configurationTool.readNodesFromFile(with: dataPath)
             if let storedNodes = storedNodes {
@@ -119,7 +130,9 @@ public final class CommandLineTool: NodeManagerDelegate {
         var selectedNodes: [vuhnNetwork.Node]?
         var allNodes: [(TimeInterval, vuhnNetwork.Node)]?
         if let storedNodes = storedNodes {
-            selectedNodes = getRandomNodes(from: storedNodes, for: 50)
+//            selectedNodes = getRandomNodes(from: storedNodes, for: 25)
+            selectedNodes = getRandomNodes(from: storedNodes, for: 10)
+//             selectedNodes = getRandomNodes(from: storedNodes, for: 50)
             allNodes = storedNodes.map { node in
                 return (TimeInterval(node.lastSuccess), node)
             }
@@ -167,16 +180,18 @@ public final class CommandLineTool: NodeManagerDelegate {
             }
         }
         
-        let aNode = vuhnNetwork.Node(address: "127.0.0.1")
-        let payload = GetHeadersMessage().serialize()
-        
-        
         if let selectedNodes = selectedNodes {
             print("configuring nodeManager with \(selectedNodes.count) selectedNodes")
-            nodeManager.configure(with: selectedNodes, and: 8333, allNodes: allNodes)
+            nodeManager.configure(with: selectedNodes,
+                                  and: 8333,
+                                  allNodes: allNodes,
+                                  allHeaders: storedHeaders)
         } else {
             print("configuring nodeManager with \(configurationTool.configurationModel.addressesArray.count) addressesArray")
-            nodeManager.configure(with: configurationTool.configurationModel.addressesArray, and: listeningPort ?? -1, allNodes: allNodes)
+            nodeManager.configure(with: configurationTool.configurationModel.addressesArray,
+                                  and: listeningPort ?? -1,
+                                  allNodes: allNodes,
+                                  allHeaders: storedHeaders)
         }
 
         print("Starting console display update timer")
@@ -192,7 +207,7 @@ public final class CommandLineTool: NodeManagerDelegate {
             }
             var countOfUnknownNodes = 0
             for node in self.nodeManager.nodes {
-                print("node \(node.nameShortened.padding(toLength: 24, withPad: " ", startingAt: 0))\t\(node.connectionType)\tlast sent \(node.sentCommand.rawValue.padding(toLength: 12, withPad: " ", startingAt: 0))\tlast received \(node.receivedCommand.rawValue.padding(toLength: 12, withPad: " ", startingAt: 0))")
+                print("node \(node.nameShortened.padding(toLength: 70, withPad: " ", startingAt: 0))\t\(node.connectionType)\tlast sent \(node.sentCommand.rawValue.padding(toLength: 12, withPad: " ", startingAt: 0))\tlast received \(node.receivedCommand.rawValue.padding(toLength: 12, withPad: " ", startingAt: 0))")
             }
             for node in self.nodeManager.nodes {
                 if node.receivedCommand == .unknown {
@@ -289,6 +304,17 @@ public final class CommandLineTool: NodeManagerDelegate {
             
             // Re-generate nodes.csv file from scratch with supplied data
             configurationTool.initialiseNodesFile(with: dataPath, nodes: nodes, forced: true)
+        }
+    }
+    
+    public func blockHeadersUpdated(for headers: [Header]) {
+        print("Updating \(headers.count) headers")
+        
+        if let dataDirectory = configurationTool.configurationModel.configurationDictionary[.dataDirectory],
+            let dataPath = URL(string: "file://\(dataDirectory.replacingOccurrences(of: "\"", with: ""))") {
+            
+            let filePath = dataPath.appendingPathComponent("\(FileService.defaultHeaderFileName)")
+            configurationTool.addHeadersToFile(with: filePath, headers: headers)
         }
     }
 }

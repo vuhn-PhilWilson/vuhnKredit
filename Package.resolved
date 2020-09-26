@@ -15,8 +15,8 @@
         "repositoryURL": "https://github.com/apple/swift-nio.git",
         "state": {
           "branch": null,
-          "revision": "16ab4d657e1ad4e77bd5f8b94af8538561643053",
-          "version": "2.14.0"
+          "revision": "96db8838be60fcbb993fa738e1120fb7f4b99c43",
+          "version": "2.22.1"
         }
       },
       {
@@ -24,8 +24,8 @@
         "repositoryURL": "https://github.com/vuhn-PhilWilson/vuhnNetwork",
         "state": {
           "branch": null,
-          "revision": "3bafb40664da5c83c0fde0a4d779c513bd3c2308",
-          "version": "0.0.7"
+          "revision": "632f61a836dd1af05d1ad75dda3df3778404bcf5",
+          "version": "0.0.8"
         }
       }
     ]

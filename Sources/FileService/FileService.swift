@@ -7,12 +7,15 @@
 
 import Foundation
 import vuhnNetwork
+import Cryptor
 
 public class FileService {
     
     let fileManager = FileManager.default
     let defaultConfigurationFileName = "configuration.ini"
-    let defaultNodeFileName = "nodes.csv"
+    public static let defaultNodeFileName = "nodes.csv"
+    public static let defaultHeaderFileName = "headers.csv"
+    
     
     public init() { }
     
@@ -158,12 +161,12 @@ public class FileService {
             return nil
         }
 
-        let defaultDataString = "Addr,Attempts,LastAttempt,LastSuccess,Location,Latency,Services,Src,SrcServices,TimeStamp,ConnectFailure,ReceiveVerAckFailure,ReceivePongFailure,ReceiveGetAddrResponseFailure\n"
+        let defaultDataString = "Addr,UserAgent,Attempts,LastAttempt,LastSuccess,Location,Latency,Services,Src,SrcServices,TimeStamp,ConnectFailure,ReceiveVerAckFailure,ReceivePongFailure,ReceiveGetAddrResponseFailure\n"
         let defaultData = defaultDataString.data(using: .utf8)
         
-        let filePath = path.appendingPathComponent("\(defaultNodeFileName)")
+        let filePath = path.appendingPathComponent("\(FileService.defaultNodeFileName)")
         if !fileManager.fileExists(atPath: filePath.path) {
-            print("\(defaultNodeFileName) doesn't exist. Creating file ...")
+            print("\(FileService.defaultNodeFileName) doesn't exist. Creating file ...")
             fileManager.createFile(atPath: filePath.path, contents: defaultData, attributes: nil)
         } else {
 //            print("\(defaultNodeFileName) already exists.")
@@ -191,7 +194,7 @@ public class FileService {
     }
     
     public func readInNodes(with filePath: URL) -> [vuhnNetwork.Node]? {
-        let fileName = filePath.appendingPathComponent("\(defaultNodeFileName)")
+        let fileName = filePath.appendingPathComponent("\(FileService.defaultNodeFileName)")
         if !fileManager.fileExists(atPath: fileName.path) {
             return nil
         }
@@ -204,7 +207,7 @@ public class FileService {
         var skipFirstLine = false
         
         enum Fields: Int {
-            case Addr,Attempts,LastAttempt,LastSuccess,Location,Latency,Services,Src,SrcServices,TimeStamp,ConnectFailure,ReceiveVerAckFailure,ReceivePongFailure,ReceiveGetAddrResponseFailure
+            case Addr,UserAgent,Attempts,LastAttempt,LastSuccess,Location,Latency,Services,Src,SrcServices,TimeStamp,ConnectFailure,ReceiveVerAckFailure,ReceivePongFailure,ReceiveGetAddrResponseFailure
         }
         for line in reader {
             if !skipFirstLine {
@@ -215,11 +218,11 @@ public class FileService {
             // 0000:0000:0000:0000:0000:ffff:157.230.41.128:8333,1,1583649882,1583649882,¯\_(ツ)_/¯,4294967295,37,unknown,0,1583649984
             
             let splitLine = line.split(separator: ",")
-            if splitLine.count != 14 {
-                print("readInNodes: Error splitLine.count is not 14. It is \(splitLine.count)")
+            if splitLine.count != 15 && splitLine.count != 14 {
+                print("readInNodes: Error splitLine.count is not 14 or 15. It is \(splitLine.count)")
                 continue
             }
-            
+            /*
             let addr = splitLine[Fields.Addr.rawValue]
             let attempts = splitLine[Fields.Attempts.rawValue]
             let lastAttempt = splitLine[Fields.LastAttempt.rawValue]
@@ -234,7 +237,7 @@ public class FileService {
             let receiveVerAckFailure = splitLine[Fields.ReceiveVerAckFailure.rawValue]
             let receivePongFailure = splitLine[Fields.ReceivePongFailure.rawValue]
             let receiveGetAddrResponseFailure = splitLine[Fields.ReceiveGetAddrResponseFailure.rawValue]
-            
+            */
             
             let addressFieldSplit = splitLine[0].split(separator: ":")
             if addressFieldSplit.count == 9 {
@@ -251,7 +254,7 @@ public class FileService {
             }
             
             if addressFieldSplit.count != 8 {
-                print("readInNodes: Error addressFieldSplit.count is not 8. It is \(addressFieldSplit.count) for \(addressFieldSplit)")
+                print("\(#function): Error addressFieldSplit.count is not 8. It is \(addressFieldSplit.count) for \(addressFieldSplit) for line \(splitLine[0])")
                 continue
             }
             let address = addressFieldSplit[6]
@@ -261,6 +264,150 @@ public class FileService {
 //            print("readInNodes: Adding \(newNode.name)")
         }
         return nodes
+    }
+        
+    // MARK: - Header Data
+    
+    public func generateDefaultHeaderFile(with path: URL, forced: Bool = false) -> URL? {
+        print("\(#function) [\(#line)] path = \(path)")
+        do {
+            try fileManager.createDirectory(at: path, withIntermediateDirectories: true, attributes: nil)
+        } catch let error as NSError {
+            print("\(#function) [\(#line)]  Unable to create directory \(error.debugDescription)")
+            return nil
+        }
+
+        let defaultDataString = "BlockHeight,Version,PrevBlock,MerkleRoot,Timestamp,Bits,Nonce,TxnCount,BlockHash\n"
+        let defaultData = defaultDataString.data(using: .utf8)
+        
+        let filePath = path.appendingPathComponent("\(FileService.defaultHeaderFileName)")
+        if !fileManager.fileExists(atPath: filePath.path) {
+            print("\(#function): \(FileService.defaultHeaderFileName) doesn't exist. Creating file ...")
+            fileManager.createFile(atPath: filePath.path, contents: defaultData, attributes: nil)
+        } else {
+            //            print("\(defaultNodeFileName) already exists.")
+            if forced == true {
+                //                print("Overwriting \(defaultNodeFileName)")
+                fileManager.createFile(atPath: filePath.path, contents: defaultData, attributes: nil)
+            }
+        }
+        return filePath
+    }
+    
+    public func writeHeaderDataToFile(with filePath: URL, header: vuhnNetwork.Header) {
+//        print("\(#function) [\(#line)]")
+        if !fileManager.fileExists(atPath: filePath.path) {
+            print("\(#function): file doesn't exist at path \(filePath.path)")
+            return
+        }
+        
+        let headerFileData = header.serializeForDisk()
+        
+        if let fileHandle = FileHandle(forWritingAtPath: filePath.path) {
+            fileHandle.seekToEndOfFile()
+            fileHandle.write(headerFileData)
+        } else {
+            print("\(#function): Can't open fileHandle")
+        }
+    }
+    
+    public func readInHeaders(with filePath: URL) -> [vuhnNetwork.Header]? {
+        print("\(#function) [\(#line)] filePath = \(filePath)")
+        let fileName = filePath.appendingPathComponent("\(FileService.defaultHeaderFileName)")
+        if !fileManager.fileExists(atPath: fileName.path) {
+            print("\(#function) [\(#line)] file \(filePath) doesn't exist")
+            return nil
+        }
+        
+        guard let reader = LineReader(path: fileName.path) else {
+            print("\(#function) [\(#line)] \(filePath) cannot open file")
+            return nil // cannot open file
+        }
+        
+        var headers = [vuhnNetwork.Header]()
+        var skipFirstLine = false
+            
+        enum Fields: Int {
+            case BlockHeight,Version,PrevBlock,MerkleRoot,Timestamp,Bits,Nonce,TxnCount,BlockHash
+        }
+        var counter = 0
+        for line in reader {
+            if !skipFirstLine {
+                skipFirstLine = true
+                continue
+            }
+
+            let splitLine = line.split(separator: ",")
+            if splitLine.count != 9 {
+                print("\(#function): Error splitLine.count is not 9. It is \(splitLine.count)")
+                continue
+            }
+            
+//            print("\(#function): splitLine \(splitLine)")
+            
+            
+            // case BlockHeight,Version,PrevBlock,MerkleRoot,Timestamp,Bits,Nonce,TxnCount,BlockHash
+
+//            let fxgfsg = [UInt8](splitLine[Fields.Version.rawValue])
+            
+            
+            guard let blockHeight = UInt32(splitLine[Fields.BlockHeight.rawValue]),
+                let version = UInt32(splitLine[Fields.Version.rawValue]),
+                let timestamp = UInt32(splitLine[Fields.Timestamp.rawValue]),
+                let bits = UInt32(splitLine[Fields.Bits.rawValue]),
+                let nonce = UInt32(splitLine[Fields.Nonce.rawValue]),
+                let txnCount = UInt8(splitLine[Fields.TxnCount.rawValue])
+            else {
+                print("\(#function) [\(#line)]  Error: Failed to extract data from line")
+                print("\(#function) [\(#line)]  Error: \(splitLine)")
+                return headers
+            }
+            
+            // txnCount will end up being a vararg ?
+            // So minimum of UInt8
+            // Will end up being an UInt32
+            // Or Data with exact size ( 1, 2, or 3 bytes )
+            
+            let prevBlockHex = String(splitLine[Fields.PrevBlock.rawValue])
+            let merkleRootHex = String(splitLine[Fields.MerkleRoot.rawValue])
+            let prevBlock: Data = CryptoUtils.data(fromHex: prevBlockHex)
+            let merkleRoot: Data = CryptoUtils.data(fromHex: merkleRootHex)
+            let blockHashHex = String(splitLine[Fields.BlockHash.rawValue]).trimmingCharacters(in: .whitespacesAndNewlines)
+            let dataFromHex: Data = CryptoUtils.data(fromHex: blockHashHex)
+            let blockHash: Data = Data(dataFromHex.reversed())
+            
+            var newHeader = Header(version: version,
+                                   prevBlock: Data(prevBlock.reversed()),
+                                   merkleRoot: Data(merkleRoot.reversed()),
+                                   timestamp: timestamp,
+                                   bits: bits,
+                                   nonce: nonce,
+                                   txnCount: txnCount)
+            newHeader.blockHeight = blockHeight
+            
+            // The blockHash is generated when Header object is created
+            // We just need to confirm that the stored blockHash value
+            // is the same as the generated one
+            if newHeader.blockHash != blockHash {
+                // Serious error inside the headers.csv file.
+                // If this header blockHash is incorrect
+                // then it shouldn't match up with the next
+                // header refering to it
+                let newHeaderBlockHashHex = CryptoUtils.hexString(from: [UInt8](newHeader.blockHash.reversed()))
+                print("\(#function) [\(#line)]  Error: newHeader.blockHash != blockHash")
+                print("\(#function) [\(#line)]  Error: \(newHeaderBlockHashHex) != \(blockHashHex)")
+                break
+            }
+            
+            headers.append(newHeader)
+            
+            counter += 1
+            if counter % 1000 == 0 {
+                print("\(#function) [\(#line)] : read \(counter) : \(headers.count) Adding \(blockHashHex)")
+            }
+        }
+        print("\(#function) [\(#line)] returning \(headers.count) headers")
+        return headers
     }
 }
 
